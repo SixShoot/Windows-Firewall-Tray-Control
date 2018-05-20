@@ -6,4 +6,6 @@ Replace the default Windows Defender Security Center tray icon by this to quickl
 Written in GoLang<br />
 Tested with go1.10 windows/386 in Windows 10/1709
 
-Build with [getlantern/systray](https://github.com/getlantern/systray) & [PR#44 Syscalls instead of custom DLLs](https://github.com/getlantern/systray/pull/44)
+Build with :
+- [getlantern/systray](https://github.com/getlantern/systray) & [PR#44 Syscalls instead of custom DLLs](https://github.com/getlantern/systray/pull/44)
+- [Go-toast](https://github.com/go-toast/toast)
