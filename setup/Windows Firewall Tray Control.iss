@@ -15,7 +15,7 @@
 #define Copyright "© 2018"
 
 ; xp, vista, win7, win8, win8.1, win10
-#define MinWin "win7"
+#define MinWin "win10"
 
 #define AppMain "{app}\win_firewall_tray_control.exe"
 #define AppWorkingDir "{app}"
