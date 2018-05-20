@@ -10,11 +10,50 @@ import (
 	"path/filepath"
 	"bytes"
 	"strings"
+	"time"
+	
+	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 	
 	"github.com/getlantern/systray"
+	"gopkg.in/toast.v1"
 )
 
+var (
+  langID int
+  l10n [][]string
+)
+
+func initLang(){
+
+    var supportedLang = []language.Tag{
+      language.AmericanEnglish, //first language is fallback
+      language.French,
+    }
+    var matched = language.NewMatcher(supportedLang)
+    var lang = display.English.Tags().Name(matched)
+    
+    l10n = [][]string{}
+    
+    english := []string{"Windows Security Center", "Enable Windows Firewall", "Disable Windows Firewall", "Exit", "Windows Firewall", "Windows Firewall is turned on.", "Loading ...", "Windows Firewall is Enabled !", "Windows Firewall is Disabled !"}
+    french := []string{"Centre de sécurité Windows", "Activer le pare-feu Windows", "Désactiver le pare-feu Windows", "Quitter", "Pare-feu Windows", "Le pare-feu Windows est activé.", "Chargement ...", "Le pare-feu Windows est activé !", "Le pare-feu Windows est désactivé !"}
+    
+    l10n = append(l10n, english)
+    l10n = append(l10n, french)
+    
+    switch lang {
+      case "English":
+          langID = 1
+      case "French":
+          langID = 2
+      default:
+          langID = 1
+    }
+
+}
+
 func main() {
+    initLang()
     systray.Run(onReady, onExit)
 }
 
@@ -64,17 +103,19 @@ func openSecurityCenter() {
     }
 }
 
-func updateTrayIcon(cd string) {
+func updateTrayIcon(cd string, showLoading bool) {
 
-    systray.SetIcon(getIcon(filepath.Join(cd,"icon/default.ico")))
-    systray.SetTooltip("Loading ...")
+    if showLoading {
+      systray.SetIcon(getIcon(filepath.Join(cd,"icon/default.ico")))
+      systray.SetTooltip(l10n[langID][6])
+    }
     
     if IswinFirewallEnabled() {
       systray.SetIcon(getIcon(filepath.Join(cd,"icon/enabled.ico")))
-      systray.SetTooltip("Windows Firewall is Enabled !")
+      systray.SetTooltip(l10n[langID][7])
     } else {
       systray.SetIcon(getIcon(filepath.Join(cd,"icon/disabled.ico")))
-      systray.SetTooltip("Windows Firewall is Disabled !")
+      systray.SetTooltip(l10n[langID][8])
     }
 }
 
@@ -85,16 +126,18 @@ func onReady() {
         log.Fatal(err)
     }
     exPath := filepath.Dir(ex)
-
+    
     systray.SetTitle("Windows Firewall Tray Control")
-    menu_open_security_center := systray.AddMenuItem("Windows Security Center", "Windows Security Center")
+    menu_open_security_center := systray.AddMenuItem(l10n[langID][0], l10n[langID][0])
     systray.AddSeparator()
-    menu_enable := systray.AddMenuItem("Enable Windows Firewall", "Enable Windows Firewall")
-    menu_disable := systray.AddMenuItem("Disable Windows Firewall", "Disable Windows Firewall")
+    menu_enable := systray.AddMenuItem(l10n[langID][1], l10n[langID][1])
+    menu_disable := systray.AddMenuItem(l10n[langID][2], l10n[langID][2])
     systray.AddSeparator()
-    mQuit := systray.AddMenuItem("Exit", "Exit")
-
-    updateTrayIcon(exPath)
+    mQuit := systray.AddMenuItem(l10n[langID][3], l10n[langID][3])
+    
+    updateTrayIcon(exPath,true)
+    ms := 60000
+    ticker := time.NewTicker(time.Millisecond * time.Duration(ms))
     
     go func() {
         for {
@@ -103,14 +146,31 @@ func onReady() {
                 openSecurityCenter()
             case <-menu_enable.ClickedCh:
                 setFirewall(true)
-                updateTrayIcon(exPath)
+                    notification := toast.Notification{
+                        //Get-StartApps in powershell to list installed AppID
+                        AppID: "Microsoft.Windows.SecHealthUI_cw5n1h2txyewy!SecHealthUI",
+                        Title: l10n[langID][4],
+                        Message: l10n[langID][5],
+                        Icon: filepath.Join(exPath,"icon/toast_ok.png"),
+                    }
+                    err := notification.Push()
+                    if err != nil {
+                        log.Fatalln(err)
+                    }
+                updateTrayIcon(exPath,true)
             case <-menu_disable.ClickedCh:
                 setFirewall(false)
-                updateTrayIcon(exPath)
+                updateTrayIcon(exPath,true)
             case <-mQuit.ClickedCh:
                 systray.Quit()
                 return
             }
+        }
+    }()
+    
+    go func() {
+        for range ticker.C {
+            updateTrayIcon(exPath,false)
         }
     }()
 
@@ -118,7 +178,7 @@ func onReady() {
 
 func onExit() {
     
-    dir := os.Getenv("TEMP");
+    dir := os.TempDir();
     
     files, err := filepath.Glob(filepath.Join(dir,"/systray_temp_icon_*"))
     if err != nil {
