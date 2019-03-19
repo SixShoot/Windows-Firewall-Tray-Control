@@ -91,7 +91,7 @@ Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"; Wo
 [Run]
 ;Redist
 ;Software related
-Filename: "{cmd}"; Parameters: "/c SCHTASKS /Create /TN ""Windows Firewall Tray Control"" /RL HIGHEST /SC ONLOGON /TR ""\""{#AppMain}\"""; WorkingDir: "{app}"; StatusMsg: "Finishing installation ..."; Flags: runhidden waituntilterminated skipifdoesntexist
+Filename: "{cmd}"; Parameters: "/c SCHTASKS /Create /F /TN ""Windows Firewall Tray Control"" /RL HIGHEST /SC ONLOGON /TR ""\""{#AppMain}\"""; WorkingDir: "{app}"; StatusMsg: "Finishing installation ..."; Flags: runhidden waituntilterminated skipifdoesntexist
 Filename: "{#AppMain}"; WorkingDir: "{#AppWorkingDir}"; Description: "{cm:RunMe,{#AppName}}"; Flags: runascurrentuser postinstall nowait skipifsilent skipifdoesntexist unchecked
 
 [UninstallRun]
